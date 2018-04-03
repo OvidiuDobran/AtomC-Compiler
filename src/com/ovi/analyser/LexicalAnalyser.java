@@ -118,9 +118,41 @@ public class LexicalAnalyser {
 				if (line.charAt(index) == 'x') {
 					index++;
 					state = 4;
-				} else {//FIXME There may be an escape char here. Not sure.
+				} else {// FIXME There may be an escape char here. Not sure.
 					index++;
 					state = 2;
+					;
+				}
+				break;
+			case 2:
+				if ("01234567".contains(line.charAt(index) + "")) {
+					index++;
+					state = 2;
+				} else if ("89".contains(line.charAt(index) + "")) {
+					index++;
+					state = 66;
+				} else if (line.charAt(index) == '.') {
+					index++;
+					state = 7;
+				} else if ("eE".contains(line.charAt(index) + "")) {
+					index++;
+					state = 8;
+				} else {
+					state = 6;
+				}
+				break;
+			case 3:
+				if ("0123456789".contains(line.charAt(index) + "")) {
+					index++;
+					state = 3;
+				} else if (line.charAt(index) == '.') {
+					index++;
+					state = 7;
+				} else if ("eE".contains(line.charAt(index) + "")) {
+					index++;
+					state = 8;
+				} else {
+					state = 6;
 				}
 				break;
 			case 4:
@@ -132,14 +164,75 @@ public class LexicalAnalyser {
 			case 5:
 				if (Character.isLetter(line.indexOf(index)) || Character.isDigit(line.indexOf(index))) {
 					index++;
+					state = 5;
+				} else {
 					state = 6;
 				}
 				break;
 			case 6:// CT_INT
-				String value = line.substring(startIndex, index);
-				IntToken tk = new IntToken(AL.RACC, lineIndex, Integer.parseInt(value));
-				tokens.add(tk);
+				String valueInt = line.substring(startIndex, index);
+				IntToken tkInt = new IntToken(AL.CT_INT, lineIndex, Integer.parseInt(valueInt));
+				tokens.add(tkInt);
 				state = 0;
+				break;
+			case 7:
+				if ("0123456789".contains(line.charAt(index) + "")) {
+					index++;
+					state = 9;
+				}
+				break;
+			case 8:
+				if ("0123456789".contains(line.charAt(index) + "")) {
+					index++;
+					state = 11;
+				} else if ("+-".contains(line.charAt(index) + "")) {
+					index++;
+					state = 12;
+				}
+				break;
+			case 9:
+				if ("0123456789".contains(line.charAt(index) + "")) {
+					index++;
+					state = 9;
+				} else if ("eE".contains(line.charAt(index) + "")) {
+					index++;
+					state = 8;
+				} else {
+					state = 10;
+				}
+				break;
+			case 10:
+				String valueReal = line.substring(startIndex, index);
+				RealToken tkReal = new RealToken(AL.CT_REAL, lineIndex, Integer.parseInt(valueReal));
+				tokens.add(tkReal);
+				state = 0;
+				break;
+			case 11:
+				if ("0123456789".contains(line.charAt(index) + "")) {
+					index++;
+					state = 11;
+				} else {
+					state = 10;
+				}
+				break;
+			case 12:
+				if ("0123456789".contains(line.charAt(index) + "")) {
+					index++;
+					state = 11;
+				}
+
+				break;
+			case 66:
+				if ("0123456789".contains(line.charAt(index) + "")) {
+					index++;
+					state = 66;
+				} else if (line.charAt(index) == '.') {
+					index++;
+					state = 7;
+				} else if ("eE".contains(line.charAt(index) + "")) {
+					index++;
+					state = 8;
+				}
 				break;
 			}
 		}
