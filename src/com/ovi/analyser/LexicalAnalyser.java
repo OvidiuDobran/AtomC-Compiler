@@ -222,6 +222,78 @@ public class LexicalAnalyser {
 				}
 
 				break;
+			case 13:
+				if (!"\\\\'".contains(line.charAt(index) + "")) {
+					index++;
+					state = 14;
+				} else if (!"\\\\".contains(line.charAt(index) + "")) {
+					index++;
+					state = 15;
+				}
+				break;
+			case 14:
+				if (line.charAt(index) == '\'') {
+					index++;
+					state = 17;
+				}
+			case 15:
+				if (!"abfnrtv'?\"\\\\0".contains(line.charAt(index) + "")) {
+					index++;
+					state = 14;
+				}
+				break;
+			case 16:
+				if (line.charAt(index) == '\'') {
+					index++;
+					state = 17;
+				}
+				break;
+			case 17:
+				String valueChar = line.substring(startIndex, index);
+				RealToken tkChar = new RealToken(AL.CT_CHAR, lineIndex, Integer.parseInt(valueChar));
+				tokens.add(tkChar);
+				state = 0;
+				break;
+			case 18:
+				if (line.charAt(index) == '"') {
+					index++;
+					state = 22;
+				} else if ("\\\\".contains(line.charAt(index) + "")) {
+					index++;
+					state = 20;
+				} else if (!"\"\\".contains(line.charAt(index) + "")) {
+					index++;
+					state = 19;
+				}
+				break;
+			case 19:
+				if (line.charAt(index) == '"') {
+					index++;
+					state = 22;
+				} else {
+					state = 18;
+				}
+				break;
+			case 20:
+				if (!"abfnrtv'?\"\\\\0".contains(line.charAt(index) + "")) {
+					index++;
+					state = 21;
+				}
+				break;
+			case 21:
+				if (line.charAt(index) == '"') {
+					index++;
+					state = 22;
+				} else {
+					state = 18;
+				}
+				break;
+			case 22:
+				String valueString = line.substring(startIndex, index);
+				RealToken tkString = new RealToken(AL.CT_STRING, lineIndex, Integer.parseInt(valueString));
+				tokens.add(tkString);
+				state = 0;
+				break;
 			case 66:
 				if ("0123456789".contains(line.charAt(index) + "")) {
 					index++;
