@@ -1,10 +1,9 @@
 package com.ovi.analyser;
 
-
 public class IntToken extends Token {
 
 	private int value;
-	
+
 	public IntToken(AL code, int line, int value) {
 		super(code, line);
 		this.value = value;
@@ -16,6 +15,11 @@ public class IntToken extends Token {
 
 	public void setValue(int value) {
 		this.value = value;
+	}
+
+	@Override
+	public String toString() {
+		return getCode().toString() + ":" + value;
 	}
 
 }

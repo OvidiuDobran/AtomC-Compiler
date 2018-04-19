@@ -16,5 +16,10 @@ public class RealToken extends Token{
 	public void setValue(double value) {
 		this.value = value;
 	}
+	
+	@Override
+	public String toString() {
+		return getCode().toString() + ":" + value;
+	}
 
 }

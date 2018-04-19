@@ -3,7 +3,7 @@ package com.ovi.analyser;
 public class Token {
 	private AL code;
 	private int line;
-	
+
 	public Token(AL code, int line) {
 		this.line = line;
 		this.setCode(code);
@@ -23,5 +23,11 @@ public class Token {
 
 	public void setLine(int line) {
 		this.line = line;
+	}
+
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return code.toString();
 	}
 }
