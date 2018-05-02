@@ -14,7 +14,8 @@ public class LexicalAnalyser {
 	// List<String> linesOfCode;
 	String code = "";
 	List<Token> tokens = new ArrayList<Token>();
-	private int currentIndex;
+	private Token crtTk;
+	private Token consumedTk;
 
 	public static void main(String[] args) throws IOException {
 		LexicalAnalyser analyser = new LexicalAnalyser();
@@ -40,6 +41,14 @@ public class LexicalAnalyser {
 				lineNumber++;
 				index++;
 			}
+
+			try {
+				System.out.println("#" + state + " " + code.charAt(index) + " (" + (int) code.charAt(index) + "):"
+						+ code.substring(index));
+			} catch (Exception e) {
+				System.err.println(tokens);
+			}
+
 			switch (state) {
 			case 0:
 				startIndex = index;
@@ -112,6 +121,10 @@ public class LexicalAnalyser {
 				} else if (Character.isLetter(code.charAt(index)) || (code.charAt(index) == '_')) {
 					index++;
 					state = 61;
+				} else if ((code.charAt(index) == '\n') || (code.charAt(index) == '\r') || (code.charAt(index) == '\t')
+						|| (code.charAt(index) == ' ')) {
+					index++;
+					state = 0;
 				}
 				break;
 			case 1:
@@ -211,7 +224,7 @@ public class LexicalAnalyser {
 				break;
 			case 10:
 				String valueReal = code.substring(startIndex, index);
-				RealToken tkReal = new RealToken(AL.CT_REAL, lineNumber, Integer.parseInt(valueReal));
+				RealToken tkReal = new RealToken(AL.CT_REAL, lineNumber, Double.parseDouble(valueReal));
 				tokens.add(tkReal);
 				state = 0;
 				break;
@@ -248,9 +261,9 @@ public class LexicalAnalyser {
 					state = 17;
 				}
 			case 15:
-				if (!"abfnrtv'?\"\\\\0".contains(code.charAt(index) + "")) {
+				if ("abfnrtv\'?\"\\\0".contains(code.charAt(index) + "")) {
 					index++;
-					state = 14;
+					state = 16;
 				}
 				break;
 			case 16:
@@ -261,18 +274,18 @@ public class LexicalAnalyser {
 				break;
 			case 17:
 				String valueChar = code.substring(startIndex, index);
-				RealToken tkChar = new RealToken(AL.CT_CHAR, lineNumber, Integer.parseInt(valueChar));
+				StringToken tkChar = new StringToken(AL.CT_CHAR, lineNumber, valueChar);
 				tokens.add(tkChar);
 				state = 0;
 				break;
 			case 18:
-				if (code.charAt(index) == '"') {
+				if (code.charAt(index) == '\"') {
 					index++;
 					state = 22;
 				} else if ("\\\\".contains(code.charAt(index) + "")) {
 					index++;
 					state = 20;
-				} else if (!"\"\\".contains(code.charAt(index) + "")) {
+				} else if (!"\"\\\\".contains(code.charAt(index) + "")) {
 					index++;
 					state = 19;
 				}
@@ -286,7 +299,7 @@ public class LexicalAnalyser {
 				}
 				break;
 			case 20:
-				if (!"abfnrtv'?\"\\\\0".contains(code.charAt(index) + "")) {
+				if ("abfnrtv\'?\"\\\0".contains(code.charAt(index) + "")) {
 					index++;
 					state = 21;
 				}
@@ -301,12 +314,31 @@ public class LexicalAnalyser {
 				break;
 			case 22:
 				String valueString = code.substring(startIndex, index);
-				RealToken tkString = new RealToken(AL.CT_STRING, lineNumber, Integer.parseInt(valueString));
+				StringToken tkString = new StringToken(AL.CT_STRING, lineNumber, valueString);
 				tokens.add(tkString);
 				state = 0;
 				break;
 			case 23:
-				state = 26;
+				if (code.charAt(index) == '/') {
+					index++;
+					state = 24;
+				} else if (code.charAt(index) == '*') {
+					index++;
+					state = 47;
+				} else {
+					state = 26;
+				}
+				break;
+			case 24:
+				if (index < code.length()) {  //FIXME if suspect
+					if ((code.charAt(index) != '\n') && (code.charAt(index) != '\r') && (code.charAt(index) != '\t')) {
+						index++;
+						state = 24;
+					} else {
+						index++;
+						state = 0;
+					}
+				}
 				break;
 			case 26:
 				Token tkDiv = new Token(AL.DIV, lineNumber);
@@ -431,6 +463,52 @@ public class LexicalAnalyser {
 				tokens.add(tkGEq);
 				state = 0;
 				break;
+			case 47:
+				if (code.charAt(index) == '*') {
+					index++;
+					state = 48;
+				} else {
+					index++;
+					state = 49;
+				}
+				break;
+			case 48:
+				if (code.charAt(index) == '*') {
+					index++;
+					state = 48;
+				} else if ((code.charAt(index) != '*') || (code.charAt(index) != '/')) {
+					index++;
+					state = 50;
+				}
+				break;
+			case 49:
+				if (code.charAt(index) == '*') {
+					index++;
+					state = 51;
+				} else {
+					index++;
+					state = 49;
+				}
+				break;
+			case 50:
+				if (code.charAt(index) == '*') {
+					index++;
+					state = 51;
+				}
+				break;
+			case 51:
+
+				if (code.charAt(index) == '*') {
+					index++;
+					state = 51;
+				} else if (code.charAt(index) == '/') {
+					index++;
+					state = 0;
+				} else {
+					index++;
+					state = 47;
+				}
+				break;
 			case 53:
 				Token tkComma = new Token(AL.COMMA, lineNumber);
 				tokens.add(tkComma);
@@ -480,9 +558,35 @@ public class LexicalAnalyser {
 					// index++;
 					state = 62;
 				}
+				break;
 			case 62:
+				Token tkID;
 				String valueID = code.substring(startIndex, index);
-				StringToken tkID = new StringToken(AL.ID, lineNumber, valueID);
+				if (valueID.equals("struct")) {
+					tkID = new Token(AL.STRUCT, lineNumber);
+				} else if (valueID.equals("break")) {
+					tkID = new Token(AL.BREAK, lineNumber);
+				} else if (valueID.equals("char")) {
+					tkID = new Token(AL.CHAR, lineNumber);
+				} else if (valueID.equals("double")) {
+					tkID = new Token(AL.DOUBLE, lineNumber);
+				} else if (valueID.equals("else")) {
+					tkID = new Token(AL.ELSE, lineNumber);
+				} else if (valueID.equals("for")) {
+					tkID = new Token(AL.FOR, lineNumber);
+				} else if (valueID.equals("if")) {
+					tkID = new Token(AL.IF, lineNumber);
+				} else if (valueID.equals("int")) {
+					tkID = new Token(AL.INT, lineNumber);
+				} else if (valueID.equals("struct")) {
+					tkID = new Token(AL.STRUCT, lineNumber);
+				} else if (valueID.equals("void")) {
+					tkID = new Token(AL.VOID, lineNumber);
+				} else if (valueID.equals("whle")) {
+					tkID = new Token(AL.WHILE, lineNumber);
+				} else {
+					tkID = new StringToken(AL.ID, lineNumber, valueID);
+				}
 				tokens.add(tkID);
 				state = 0;
 				break;
@@ -500,6 +604,96 @@ public class LexicalAnalyser {
 				break;
 			}
 		}
+
+	}
+
+	private boolean consume(AL code) {
+		if (crtTk.getCode().equals(code)) {
+			consumedTk = crtTk;
+			crtTk = tokens.get(tokens.indexOf(crtTk));
+			return true;
+		}
+		return false;
+	}
+
+	boolean typeName() {
+		if (!typeBase()) {
+			return false;
+		}
+		arrayDecl();
+		return true;
+	}
+
+	private boolean arrayDecl() {
+		Token startToken = crtTk;
+		if (!consume(AL.LBRACKET)) {
+			return false;
+		}
+		expr();
+		if (consume(AL.RBRACKET)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private boolean expr() {
+		if (exprAssign()) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean exprAssign() {
+		if (exprUnary()) {
+			if (consume(AL.ASSIGN)) {
+				if (exprAssign()) {
+					return true;
+				}
+				if (exprOr()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean exprOr() {
+		if (exprOr()) {
+			if (consume(AL.OR)) {
+				if (exprAnd()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean exprAnd() {
+		return false;
+	}
+
+	private boolean exprUnary() {
+		return false;
+	}
+
+	private boolean typeBase() {
+		Token startToken = crtTk;
+		if (consume(AL.INT)) {
+			return true;
+		}
+		if (consume(AL.DOUBLE)) {
+			return true;
+		}
+		if (consume(AL.CHAR)) {
+			return true;
+		}
+		if (consume(AL.STRUCT)) {
+			if (consume(AL.ID)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void formatTextToCode() {
@@ -509,13 +703,23 @@ public class LexicalAnalyser {
 	}
 
 	private void readFile() throws FileNotFoundException, IOException {
-		File file = new File("input.txt");
+		File file = new File("input.c");
 		BufferedReader br = new BufferedReader(new FileReader(file));
 		String line;
 		while ((line = br.readLine()) != null) {
 			textLines.add(line);
 		}
 		br.close();
+	}
+
+	private void err(String message) {
+		System.err.println(message);
+		System.exit(0);
+	}
+
+	private void tkerr(String message, Token token) {
+		System.err.println("Error in line " + token.getLine() + ":" + message);
+		System.exit(1);
 	}
 
 }
