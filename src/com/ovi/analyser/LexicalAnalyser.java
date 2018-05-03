@@ -26,7 +26,7 @@ public class LexicalAnalyser {
 		readFile();
 		// linesOfCode = new ArrayList<String>(textLines);
 		formatTextToCode();
-		System.out.println(code);
+		//System.out.println(code);
 		getTokens();
 		System.out.println(tokens);
 	}
@@ -42,12 +42,12 @@ public class LexicalAnalyser {
 				index++;
 			}
 
-			try {
-				System.out.println("#" + state + " " + code.charAt(index) + " (" + (int) code.charAt(index) + "):"
-						+ code.substring(index));
-			} catch (Exception e) {
-				System.err.println(tokens);
-			}
+//			try {
+//				System.out.println("#" + state + " " + code.charAt(index) + " (" + (int) code.charAt(index) + "):"
+//						+ code.substring(index));
+//			} catch (Exception e) {
+//				System.err.println(tokens);
+//			}
 
 			switch (state) {
 			case 0:
@@ -125,6 +125,8 @@ public class LexicalAnalyser {
 						|| (code.charAt(index) == ' ')) {
 					index++;
 					state = 0;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 1:
@@ -171,6 +173,8 @@ public class LexicalAnalyser {
 				if (Character.isLetter(code.charAt(index)) || Character.isDigit(code.charAt(index))) {
 					index++;
 					state = 5;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 5:
@@ -200,6 +204,8 @@ public class LexicalAnalyser {
 				if ("0123456789".contains(code.charAt(index) + "")) {
 					index++;
 					state = 9;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 8:
@@ -209,6 +215,8 @@ public class LexicalAnalyser {
 				} else if ("+-".contains(code.charAt(index) + "")) {
 					index++;
 					state = 12;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 9:
@@ -240,14 +248,16 @@ public class LexicalAnalyser {
 				if ("0123456789".contains(code.charAt(index) + "")) {
 					index++;
 					state = 11;
+				} else {
+					err("invalid character");
 				}
 
 				break;
 			case 13:
-				if (!"\\\\'".contains(code.charAt(index) + "")) {
+				if (!"\'\\\\".contains(code.charAt(index) + "")) {
 					index++;
 					state = 14;
-				} else if (!"\\\\".contains(code.charAt(index) + "")) {
+				} else if ("\\\\".contains(code.charAt(index) + "")) {
 					index++;
 					state = 15;
 				} else {
@@ -260,16 +270,21 @@ public class LexicalAnalyser {
 					index++;
 					state = 17;
 				}
+				break;
 			case 15:
 				if ("abfnrtv\'?\"\\\0".contains(code.charAt(index) + "")) {
 					index++;
 					state = 16;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 16:
 				if (code.charAt(index) == '\'') {
 					index++;
 					state = 17;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 17:
@@ -288,6 +303,8 @@ public class LexicalAnalyser {
 				} else if (!"\"\\\\".contains(code.charAt(index) + "")) {
 					index++;
 					state = 19;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 19:
@@ -302,6 +319,8 @@ public class LexicalAnalyser {
 				if ("abfnrtv\'?\"\\\0".contains(code.charAt(index) + "")) {
 					index++;
 					state = 21;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 21:
@@ -330,7 +349,7 @@ public class LexicalAnalyser {
 				}
 				break;
 			case 24:
-				if (index < code.length()) {  //FIXME if suspect
+				if (index < code.length()) { // FIXME if suspect
 					if ((code.charAt(index) != '\n') && (code.charAt(index) != '\r') && (code.charAt(index) != '\t')) {
 						index++;
 						state = 24;
@@ -338,6 +357,8 @@ public class LexicalAnalyser {
 						index++;
 						state = 0;
 					}
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 26:
@@ -380,6 +401,8 @@ public class LexicalAnalyser {
 				if (code.charAt(index) == '|') {
 					index++;
 					state = 34;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 34:
@@ -479,6 +502,8 @@ public class LexicalAnalyser {
 				} else if ((code.charAt(index) != '*') || (code.charAt(index) != '/')) {
 					index++;
 					state = 50;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 49:
@@ -494,6 +519,8 @@ public class LexicalAnalyser {
 				if (code.charAt(index) == '*') {
 					index++;
 					state = 51;
+				} else {
+					err("invalid character");
 				}
 				break;
 			case 51:
